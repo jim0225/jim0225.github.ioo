@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CO2 포집 기술 추천 시스템</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .criteria-group {
+            margin-bottom: 20px;
+        }
+        .criteria-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .weight-radio {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .weight-radio label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .result-box {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 4px;
+        }
+        .recommendation {
+            font-weight: bold;
+            color: #1b5e20;
+        }
+        .score-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .score-table th, .score-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .score-table th {
+            background-color: #f5f5f5;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CO2 포집 기술 추천 시스템</h1>
+        <p>아민 기반 CO2 포집 기술(MEA, DEA, MDEA, AMP) 중에서 사용자의 요구사항에 가장 적합한 기술을 추천합니다.</p>
+
+        <div class="criteria-group">
+            <div class="criteria-title">평가 요소 중요도 선택</div>
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="efficiency" value="3" checked>
+                    흡수 효율 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="efficiency" value="2">
+                    흡수 효율 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="efficiency" value="1">
+                    흡수 효율 (중요하지 않음)
+                </label>
+            </div>
+
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="speed" value="3" checked>
+                    반응 속도 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="speed" value="2">
+                    반응 속도 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="speed" value="1">
+                    반응 속도 (중요하지 않음)
+                </label>
+            </div>
+
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="energy" value="3" checked>
+                    재생 에너지 소비 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="energy" value="2">
+                    재생 에너지 소비 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="energy" value="1">
+                    재생 에너지 소비 (중요하지 않음)
+                </label>
+            </div>
+
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="corrosion" value="3" checked>
+                    부식성 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="corrosion" value="2">
+                    부식성 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="corrosion" value="1">
+                    부식성 (중요하지 않음)
+                </label>
+            </div>
+
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="environment" value="3" checked>
+                    환경성 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="environment" value="2">
+                    환경성 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="environment" value="1">
+                    환경성 (중요하지 않음)
+                </label>
+            </div>
+
+            <div class="weight-radio">
+                <label>
+                    <input type="radio" name="economy" value="3" checked>
+                    경제성 (매우 중요)
+                </label>
+                <label>
+                    <input type="radio" name="economy" value="2">
+                    경제성 (보통)
+                </label>
+                <label>
+                    <input type="radio" name="economy" value="1">
+                    경제성 (중요하지 않음)
+                </label>
+            </div>
+        </div>
+
+        <button class="btn" onclick="calculateRecommendation()">추천 받기</button>
+
+        <div id="resultBox" class="result-box">
+            <div class="recommendation" id="recommendationText"></div>
+            <table class="score-table" id="scoreTable">
+                <thead>
+                    <tr>
+                        <th>기술</th>
+                        <th>점수</th>
+                    </tr>
+                </thead>
+                <tbody id="scoreTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 데이터 정의
+        const amineDescriptions = {
+            MEA:  "빠른 반응속도와 낮은 비용으로 인해 발전소 등 대규모 배출원에 적합합니다.",
+            DEA:  "균형 잡힌 성능과 효율로 다목적 산업에 사용하기 적합합니다.",
+            MDEA: "낮은 부식성과 재생 에너지 소비로 정밀 화학 공정이나 장비 수명이 중요한 곳에 적합합니다.",
+            AMP:  "흡수 효율이 높아 고순도 CO₂가 필요한 공정에 적합합니다."
+        };
+
+        const amineData = {
+            MEA:    { 효율: 0.74, 속도: 1.0, 에너지: 0.30, 부식: 0.40, 환경: 0.80, 경제: 1.00 },
+            DEA:    { 효율: 0.89, 속도: 0.7, 에너지: 0.52, 부식: 0.55, 환경: 0.70, 경제: 0.90 },
+            MDEA:   { 효율: 0.67, 속도: 0.4, 에너지: 1.00, 부식: 1.00, 환경: 0.60, 경제: 0.80 },
+            AMP:    { 효율: 1.00, 속도: 0.6, 에너지: 0.71, 부식: 0.65, 환경: 0.50, 경제: 0.70 }
+        };
+
+        // 추천 계산 함수
+        function calculateRecommendation() {
+            try {
+                // 평가 요소 선택 확인
+                const weights = {};
+                const criteria = ['efficiency', 'speed', 'energy', 'corrosion', 'environment', 'economy'];
+                
+                for (let name of criteria) {
+                    const checked = document.querySelector(`input[name="${name}"]:checked`);
+                    if (!checked) {
+                        alert(`"${name}" 평가 요소를 선택해주세요.`);
+                        return;
+                    }
+                    weights[name === 'efficiency' ? '효율' : name] = parseInt(checked.value);
+                }
+
+                // 점수 계산
+                const scores = Object.keys(amineData).reduce((acc, amine) => {
+                    const data = amineData[amine];
+                    acc[amine] = Object.keys(data).reduce((sum, key) => 
+                        sum + (data[key] * weights[key]), 0);
+                    return acc;
+                }, {});
+
+                // 최고 점수 찾기
+                const recommendedAmine = Object.entries(scores)
+                    .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+
+                // 결과 정렬
+                const sortedScores = Object.entries(scores)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([amine, score]) => ({ amine, score }));
+
+                // 결과 표시
+                document.getElementById('recommendationText').textContent = `추천 기술: ${recommendedAmine}`;
+                const tbody = document.getElementById('scoreTableBody');
+                tbody.innerHTML = '';
+
+                sortedScores.forEach(({ amine, score }) => {
+                    const row = tbody.insertRow();
+                    const cell1 = row.insertCell(0);
+                    const cell2 = row.insertCell(1);
+                    cell1.textContent = amine;
+                    cell2.textContent = score.toFixed(2);
+                });
+
+                // 설명 표시
+                const descriptionDiv = document.createElement('div');
+                descriptionDiv.style.marginTop = '15px';
+                descriptionDiv.style.color = '#333';
+                descriptionDiv.style.cursor = 'pointer';
+                descriptionDiv.style.padding = '8px';
+                descriptionDiv.style.borderRadius = '4px';
+                descriptionDiv.style.border = '1px solid #ddd';
+                descriptionDiv.style.backgroundColor = '#f8f9fa';
+                descriptionDiv.textContent = `기술 설명: ${amineDescriptions[recommendedAmine]}`;
+                
+                // 복사 기능
+                descriptionDiv.onclick = function() {
+                    navigator.clipboard.writeText(amineDescriptions[recommendedAmine])
+                        .then(() => {
+                            descriptionDiv.style.backgroundColor = '#e8f5e9';
+                            descriptionDiv.style.borderColor = '#4CAF50';
+                            setTimeout(() => {
+                                descriptionDiv.style.backgroundColor = '#f8f9fa';
+                                descriptionDiv.style.borderColor = '#ddd';
+                            }, 1000);
+                        })
+                        .catch(() => {
+                            alert('텍스트 복사에 실패했습니다.');
+                        });
+                };
+
+                document.getElementById('resultBox').appendChild(descriptionDiv);
+                document.getElementById('resultBox').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('추천 계산 중 오류가 발생했습니다. 다시 시도해주세요.');
+            }
+        }
+
+        // 페이지 로드 시 모든 첫 번째 라디오 버튼 선택
+        document.addEventListener('DOMContentLoaded', () => {
+            const radioGroups = document.querySelectorAll('input[type="radio"]:first-of-type');
+            radioGroups.forEach(radio => radio.checked = true);
+        });
+    </script>
+</body>
+</html>
